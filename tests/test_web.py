@@ -91,6 +91,16 @@ def test_chat_page_exposes_encoding_flag():
     assert 'data-encoding="on"' in sec.get("/chat").text
 
 
+def test_secure_csp_nonce_matches_app_script():
+    import re
+
+    sec, _ = make_client({"HALCYON_MODE": "secure"}, "hi")
+    r = sec.get("/chat", params={"session": "p1"})
+    m = re.search(r"'nonce-([^']+)'", r.headers["content-security-policy"])
+    assert m, "CSP should carry a script nonce in secure mode"
+    assert f'nonce="{m.group(1)}"' in r.text, "app <script> must carry the CSP nonce"
+
+
 def test_display_name_rendered_raw_when_vulnerable_escaped_when_secure():
     payload = "<img src=x onerror=1>"
     vuln, _ = make_client({"HALCYON_MODE": "vulnerable"}, "hi")

@@ -14,5 +14,6 @@ def test_encode_output_passthrough_when_off():
     assert guards.encode_output(payload, s) == payload
 
 
-def test_m2_system_prompt_contains_disclosure_canary():
-    assert guards.SYS_CANARY_M2 in guards.SYSTEM_M2
+def test_m2_canary_in_vulnerable_prompt_not_hardened():
+    assert guards.SYS_CANARY_M2 in guards.SYSTEM_WITH_TOKEN
+    assert guards.SYS_CANARY_M2 not in guards.SYSTEM_BASE

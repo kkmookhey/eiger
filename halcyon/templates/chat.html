@@ -38,7 +38,7 @@
   <input id="msg" type="text" placeholder="Message Halo…" autocomplete="off" autofocus />
   <button id="send" type="submit">Send</button>
 </form>
-<script>
+<script nonce="{{ nonce }}">
   const sid = new URLSearchParams(location.search).get("session") || "dev";
   const log = document.getElementById("log");
   const provSel = document.getElementById("provider");

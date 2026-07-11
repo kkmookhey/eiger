@@ -1,3 +1,4 @@
+import secrets
 import time
 from collections.abc import Callable
 from pathlib import Path
@@ -43,10 +44,12 @@ def create_app(store: Store, settings: Settings, llm_factory: LLMFactory) -> Fas
 
     @app.middleware("http")
     async def _csp(request: Request, call_next):
+        nonce = secrets.token_urlsafe(16)
+        request.state.csp_nonce = nonce
         resp = await call_next(request)
         if settings.sec_output_encoding:
             resp.headers["Content-Security-Policy"] = (
-                "default-src 'self'; script-src 'self'; img-src 'self' data:"
+                f"default-src 'self'; script-src 'self' 'nonce-{nonce}'; img-src 'self' data:"
             )
         return resp
 
@@ -102,11 +105,12 @@ def create_app(store: Store, settings: Settings, llm_factory: LLMFactory) -> Fas
         )
 
     @app.get("/chat", response_class=HTMLResponse)
-    def chat_page(session: str = "dev") -> str:
+    def chat_page(request: Request, session: str = "dev") -> str:
         name = store.get_profile(session)
         return templates.get_template("chat.html").render(
             output_encoding="on" if settings.sec_output_encoding else "off",
             display_name_html=guards.encode_output(name, settings),
+            nonce=request.state.csp_nonce,
         )
 
     from fastapi.responses import Response
