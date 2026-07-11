@@ -1,10 +1,17 @@
 <!doctype html>
 <title>Halo — Halcyon assistant</title>
 <style>
-  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; }
-  #log { border: 1px solid #ccc; padding: 1rem; height: 380px; overflow-y: auto; }
-  .you { color: #0b5cad; } .halo { color: #333; }
+  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+  #log { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; height: 380px;
+         overflow-y: auto; background: #fafafa; }
+  #log p { margin: .35rem 0; line-height: 1.4; }
+  .you { color: #0b5cad; } .halo { color: #222; } .sys { color: #888; font-style: italic; }
   .controls { margin: .5rem 0; }
+  #f { display: flex; gap: .5rem; margin-top: .6rem; }
+  #msg { flex: 1; padding: .6rem .7rem; font-size: 1rem; border: 1px solid #bbb;
+         border-radius: 6px; }
+  #f button { padding: .6rem 1.1rem; font-size: 1rem; cursor: pointer; border-radius: 6px; }
+  #f button[disabled] { opacity: .5; cursor: default; }
 </style>
 <h1>Halo</h1>
 <div class="controls">
@@ -21,11 +28,16 @@
   </span>
 </div>
 <div id="log"></div>
-<form id="f"><input id="msg" style="width:80%" autocomplete="off" /><button>Send</button></form>
+<form id="f">
+  <input id="msg" type="text" placeholder="Message Halo…" autocomplete="off" autofocus />
+  <button id="send" type="submit">Send</button>
+</form>
 <script>
   const sid = new URLSearchParams(location.search).get("session") || "dev";
   const log = document.getElementById("log");
   const provSel = document.getElementById("provider");
+  const msgEl = document.getElementById("msg");
+  const sendBtn = document.getElementById("send");
   provSel.onchange = () => {
     document.getElementById("remote").style.display =
       provSel.value === "remote" ? "inline" : "none";
@@ -34,24 +46,37 @@
     const p = document.createElement("p");
     p.className = cls; p.textContent = who + ": " + text; log.appendChild(p);
     log.scrollTop = log.scrollHeight;
+    return p;
   }
   document.getElementById("f").onsubmit = async (e) => {
     e.preventDefault();
-    const msg = document.getElementById("msg").value;
+    const msg = msgEl.value.trim();
     if (!msg) return;
     line("you", "You", msg);
-    document.getElementById("msg").value = "";
+    msgEl.value = "";
+    sendBtn.disabled = true;
+    const pending = line("sys", "Halo", "typing…");
     const body = { session_id: sid, message: msg };
     if (provSel.value === "remote") {
       body.provider = document.getElementById("rprovider").value;
       body.model = document.getElementById("model").value;
       body.api_key = document.getElementById("key").value;
     }
-    const r = await fetch("/api/chat", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const data = await r.json();
-    line("halo", "Halo", data.reply);
+    try {
+      const r = await fetch("/api/chat", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await r.json();
+      pending.remove();
+      line("halo", "Halo", data.reply ?? ("error: " + JSON.stringify(data)));
+    } catch (err) {
+      pending.remove();
+      line("sys", "Halo", "request failed — " + err);
+    } finally {
+      sendBtn.disabled = false;
+      msgEl.focus();
+    }
   };
+  msgEl.focus();
 </script>
