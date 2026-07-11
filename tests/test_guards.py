@@ -24,3 +24,11 @@ def test_hardened_assembly_excludes_token_and_separates_roles():
     joined = " ".join(m["content"] for m in messages)
     assert guards.HONEYTOKEN not in joined
     assert [m["role"] for m in messages] == ["system", "user"]
+
+
+def test_override_marker_never_literally_in_assembled_prompt():
+    for mode in ("vulnerable", "secure"):
+        s = load_settings({"HALCYON_MODE": mode})
+        messages = guards.assemble(s, "hello")
+        joined = " ".join(m["content"] for m in messages)
+        assert guards.OVERRIDE_MARKER not in joined

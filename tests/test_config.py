@@ -25,3 +25,9 @@ def test_defaults_when_unset():
     assert s.mode == "vulnerable"
     assert s.default_provider == "local"
     assert s.ollama_url == "http://localhost:11434"
+
+
+def test_unknown_mode_raises():
+    import pytest
+    with pytest.raises(ValueError):
+        load_settings({"HALCYON_MODE": "production"})

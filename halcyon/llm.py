@@ -28,7 +28,7 @@ class OllamaProvider:
         resp = httpx.post(
             f"{self._url}/api/chat",
             json={"model": self._model, "messages": messages, "stream": False},
-            timeout=120,
+            timeout=60,
         )
         resp.raise_for_status()
         return resp.json()["message"]["content"]
@@ -59,7 +59,7 @@ class RemoteProvider:
             "https://api.openai.com/v1/chat/completions",
             headers={"Authorization": f"Bearer {self._api_key}"},
             json={"model": self._model, "messages": messages},
-            timeout=120,
+            timeout=60,
         )
         resp.raise_for_status()
         return resp.json()["choices"][0]["message"]["content"]
@@ -79,7 +79,7 @@ class RemoteProvider:
                 "messages": turns,
                 "max_tokens": 1024,
             },
-            timeout=120,
+            timeout=60,
         )
         resp.raise_for_status()
         return resp.json()["content"][0]["text"]
@@ -92,8 +92,8 @@ def build_llm(
     api_key: str | None = None,
 ) -> LLM:
     provider = provider or settings.default_provider
-    if provider == "remote":
+    if provider in ("remote", "openai"):
         return RemoteProvider("openai", api_key or "", model or "gpt-4o")
-    if provider in ("openai", "anthropic"):
-        return RemoteProvider(provider, api_key or "", model or "gpt-4o")
+    if provider == "anthropic":
+        return RemoteProvider("anthropic", api_key or "", model or "claude-3-5-sonnet-latest")
     return OllamaProvider(settings.ollama_url, model or settings.ollama_model)

@@ -3,7 +3,7 @@ from pathlib import Path
 
 import psycopg
 
-from halcyon.store import Event
+from halcyon.store import MODULE_RESET, Event
 
 _SCHEMA = (Path(__file__).parent / "schema.sql").read_text()
 
@@ -33,20 +33,20 @@ class PostgresStore:
         with psycopg.connect(self._dsn) as conn:
             row = conn.execute(
                 "SELECT COALESCE(MAX(id), 0) FROM audit_log "
-                "WHERE session_id=%s AND module=%s AND event_type='module_reset'",
-                (session_id, module),
+                "WHERE session_id=%s AND module=%s AND event_type=%s",
+                (session_id, module, MODULE_RESET),
             ).fetchone()
             last_reset = row[0] if row else 0
             rows = conn.execute(
                 "SELECT session_id, module, event_type, actor, details, id "
                 "FROM audit_log WHERE session_id=%s AND module=%s AND id>%s "
-                "AND event_type<>'module_reset' ORDER BY id",
-                (session_id, module, last_reset),
+                "AND event_type<>%s ORDER BY id",
+                (session_id, module, last_reset, MODULE_RESET),
             ).fetchall()
         return [Event(r[0], r[1], r[2], r[3], r[4], r[5]) for r in rows]
 
     def write_reset_marker(self, session_id: str, module: str) -> None:
-        self.append_event(session_id, module, "module_reset", session_id, {})
+        self.append_event(session_id, module, MODULE_RESET, session_id, {})
 
     def get_progress(self, session_id: str, module: str) -> tuple[bool, bool]:
         with psycopg.connect(self._dsn) as conn:

@@ -24,6 +24,10 @@ class Settings:
 
 def load_settings(env: Mapping[str, str]) -> Settings:
     mode = env.get("HALCYON_MODE", "vulnerable").strip().lower()
+    if mode not in ("vulnerable", "secure"):
+        raise ValueError(
+            f"HALCYON_MODE must be 'vulnerable' or 'secure', got {mode!r}"
+        )
     secure = mode == "secure"
     return Settings(
         mode=mode,

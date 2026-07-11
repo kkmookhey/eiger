@@ -43,3 +43,19 @@ def test_input_filter_blocks_before_model_call():
     assert reply == halo.REFUSAL
     assert llm.last_messages == []
     assert audit.has_event(s, "p1", "m1", audit.INPUT_FILTERED)
+
+
+def test_llm_failure_returns_graceful_error_and_records_nothing():
+    from halcyon import audit
+    from halcyon.store import InMemoryStore
+    from halcyon.config import load_settings
+
+    class FailingLLM:
+        def chat(self, messages):
+            raise RuntimeError("model down")
+
+    s = InMemoryStore()
+    settings = load_settings({"HALCYON_MODE": "vulnerable"})
+    reply = halo.handle_turn(s, FailingLLM(), settings, "p1", "hello")
+    assert reply == halo.LLM_ERROR
+    assert not audit.has_event(s, "p1", "m1", audit.INTERNAL_TOKEN_DISCLOSED)

@@ -20,3 +20,9 @@ def test_build_llm_remote_requires_key():
     import pytest
     with pytest.raises(ValueError):
         build_llm(s, provider="remote", model="gpt-4o", api_key="")
+
+
+def test_build_llm_anthropic_uses_a_claude_default_model():
+    s = load_settings({})
+    llm = build_llm(s, provider="anthropic", api_key="k")
+    assert "claude" in llm._model

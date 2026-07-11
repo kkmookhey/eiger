@@ -1,0 +1,13 @@
+.venv/
+.git/
+.gitignore
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.superpowers/
+__pycache__/
+*.pyc
+docs/
+pgdata/
+ollama/
+.DS_Store
