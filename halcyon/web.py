@@ -11,7 +11,7 @@ from halcyon import halo
 from halcyon.config import Settings
 from halcyon.llm import LLM, OllamaProvider
 from halcyon.store import Store
-from halcyon.validators import m1
+from halcyon.validators import m1, m2
 
 LLMFactory = Callable[[str | None, str | None, str | None], LLM]
 
@@ -28,7 +28,7 @@ class ResetIn(BaseModel):
     session_id: str
 
 
-_VALIDATORS = {"m1": m1.validate}
+_VALIDATORS = {"m1": m1.validate, "m2": m2.validate}
 
 
 def create_app(store: Store, settings: Settings, llm_factory: LLMFactory) -> FastAPI:

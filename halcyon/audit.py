@@ -4,6 +4,7 @@ INTERNAL_TOKEN_DISCLOSED = "internal_token_disclosed"
 POLICY_OVERRIDE = "policy_override"
 INPUT_FILTERED = "input_filtered"
 SYSTEM_PROMPT_DISCLOSED = "system_prompt_disclosed"
+XSS_BEACON = "xss_beacon"
 
 
 def record(
