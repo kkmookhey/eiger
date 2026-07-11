@@ -1,11 +1,14 @@
 from collections.abc import Callable
+from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pydantic import BaseModel
 
 from halcyon import halo
 from halcyon.config import Settings
-from halcyon.llm import LLM
+from halcyon.llm import LLM, OllamaProvider
 from halcyon.store import Store
 from halcyon.validators import m1
 
@@ -30,9 +33,20 @@ _VALIDATORS = {"m1": m1.validate}
 def create_app(store: Store, settings: Settings, llm_factory: LLMFactory) -> FastAPI:
     app = FastAPI(title="Halcyon")
 
+    templates = Environment(
+        loader=FileSystemLoader(Path(__file__).parent / "templates"),
+        autoescape=select_autoescape(),
+    )
+
     @app.get("/health")
     def health() -> dict:
-        return {"status": "ok", "mode": settings.mode}
+        ollama = OllamaProvider(settings.ollama_url, settings.ollama_model).ping()
+        return {
+            "status": "ok",
+            "mode": settings.mode,
+            "ollama": "up" if ollama else "down",
+            "db": "up" if store.ping() else "down",
+        }
 
     @app.post("/api/chat")
     def chat(body: ChatIn) -> dict:
@@ -51,5 +65,16 @@ def create_app(store: Store, settings: Settings, llm_factory: LLMFactory) -> Fas
     def reset(module: str, body: ResetIn) -> dict:
         store.write_reset_marker(body.session_id, module)
         return {"status": "reset", "module": module}
+
+    @app.get("/", response_class=HTMLResponse)
+    def root() -> str:
+        ollama = OllamaProvider(settings.ollama_url, settings.ollama_model).ping()
+        return templates.get_template("reach.html").render(
+            ollama=ollama, db=store.ping(), mode=settings.mode
+        )
+
+    @app.get("/chat", response_class=HTMLResponse)
+    def chat_page() -> str:
+        return templates.get_template("chat.html").render()
 
     return app

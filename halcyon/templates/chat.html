@@ -1,0 +1,57 @@
+<!doctype html>
+<title>Halo — Halcyon assistant</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; }
+  #log { border: 1px solid #ccc; padding: 1rem; height: 380px; overflow-y: auto; }
+  .you { color: #0b5cad; } .halo { color: #333; }
+  .controls { margin: .5rem 0; }
+</style>
+<h1>Halo</h1>
+<div class="controls">
+  <label>Model:
+    <select id="provider">
+      <option value="local">Local (Ollama)</option>
+      <option value="remote">Remote (BYOK)</option>
+    </select>
+  </label>
+  <span id="remote" style="display:none">
+    <select id="rprovider"><option>openai</option><option>anthropic</option></select>
+    <input id="model" placeholder="model (e.g. gpt-4o)" />
+    <input id="key" type="password" placeholder="API key (not stored server-side)" />
+  </span>
+</div>
+<div id="log"></div>
+<form id="f"><input id="msg" style="width:80%" autocomplete="off" /><button>Send</button></form>
+<script>
+  const sid = new URLSearchParams(location.search).get("session") || "dev";
+  const log = document.getElementById("log");
+  const provSel = document.getElementById("provider");
+  provSel.onchange = () => {
+    document.getElementById("remote").style.display =
+      provSel.value === "remote" ? "inline" : "none";
+  };
+  function line(cls, who, text) {
+    const p = document.createElement("p");
+    p.className = cls; p.textContent = who + ": " + text; log.appendChild(p);
+    log.scrollTop = log.scrollHeight;
+  }
+  document.getElementById("f").onsubmit = async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("msg").value;
+    if (!msg) return;
+    line("you", "You", msg);
+    document.getElementById("msg").value = "";
+    const body = { session_id: sid, message: msg };
+    if (provSel.value === "remote") {
+      body.provider = document.getElementById("rprovider").value;
+      body.model = document.getElementById("model").value;
+      body.api_key = document.getElementById("key").value;
+    }
+    const r = await fetch("/api/chat", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await r.json();
+    line("halo", "Halo", data.reply);
+  };
+</script>

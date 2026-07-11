@@ -40,6 +40,20 @@ def test_reset_clears_pass_state():
     assert r.json()["core"] == "fail"
 
 
+def test_root_serves_reach_test_page():
+    client, _ = make_client({"HALCYON_MODE": "vulnerable"}, "hi")
+    r = client.get("/")
+    assert r.status_code == 200
+    assert "reach-test" in r.text.lower()
+
+
+def test_chat_page_has_model_selector():
+    client, _ = make_client({"HALCYON_MODE": "vulnerable"}, "hi")
+    r = client.get("/chat")
+    assert r.status_code == 200
+    assert "local" in r.text.lower() and "remote" in r.text.lower()
+
+
 def test_progress_survives_new_app_same_store():
     store = InMemoryStore()
     settings = load_settings({"HALCYON_MODE": "vulnerable"})

@@ -1,0 +1,16 @@
+<!doctype html>
+<title>Halcyon — reach-test</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 3rem auto; }
+  .pill { display: inline-block; padding: .2rem .6rem; border-radius: 1rem; color: #fff; }
+  .up { background: #1a7f37; } .down { background: #b42318; }
+</style>
+<h1>Halcyon reach-test</h1>
+<p>Screen 1 — confirm you can reach the lab before you start.</p>
+<ul>
+  <li>App: <span class="pill up">up</span></li>
+  <li>Ollama: <span class="pill {{ 'up' if ollama else 'down' }}">{{ 'up' if ollama else 'down' }}</span></li>
+  <li>Store: <span class="pill {{ 'up' if db else 'down' }}">{{ 'up' if db else 'down' }}</span></li>
+</ul>
+<p>Mode: <strong>{{ mode }}</strong></p>
+<p><a href="/chat">Enter the lab →</a></p>

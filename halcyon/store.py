@@ -24,6 +24,7 @@ class Store(Protocol):
     def upsert_progress(
         self, session_id: str, module: str, core: bool, stretch: bool
     ) -> None: ...
+    def ping(self) -> bool: ...
 
 
 @dataclass
@@ -57,3 +58,6 @@ class InMemoryStore:
         self, session_id: str, module: str, core: bool, stretch: bool
     ) -> None:
         self._progress[(session_id, module)] = (core, stretch)
+
+    def ping(self) -> bool:
+        return True

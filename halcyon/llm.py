@@ -33,6 +33,13 @@ class OllamaProvider:
         resp.raise_for_status()
         return resp.json()["message"]["content"]
 
+    def ping(self) -> bool:
+        try:
+            r = httpx.get(f"{self._url}/api/tags", timeout=5)
+            return r.status_code == 200
+        except httpx.HTTPError:
+            return False
+
 
 class RemoteProvider:
     def __init__(self, provider: str, api_key: str, model: str) -> None:
