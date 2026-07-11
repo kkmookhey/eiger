@@ -31,3 +31,9 @@ def test_unknown_mode_raises():
     import pytest
     with pytest.raises(ValueError):
         load_settings({"HALCYON_MODE": "production"})
+
+
+def test_output_encoding_follows_mode():
+    assert load_settings({"HALCYON_MODE": "vulnerable"}).sec_output_encoding is False
+    assert load_settings({"HALCYON_MODE": "secure"}).sec_output_encoding is True
+    assert load_settings({"HALCYON_MODE": "vulnerable", "SEC_OUTPUT_ENCODING": "on"}).sec_output_encoding is True
