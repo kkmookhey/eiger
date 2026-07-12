@@ -39,7 +39,7 @@ class ChromaKB:
             chunks.append(Chunk(
                 chunk_id,
                 text,
-                str(meta.get("provenance", "")),
+                str(meta.get("provenance", "trusted")),
                 str(meta.get("access", "public")),
                 str(meta.get("owner_session", "")),
             ))
