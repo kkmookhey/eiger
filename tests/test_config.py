@@ -47,3 +47,8 @@ def test_rag_provenance_follows_mode():
 def test_artifact_verification_follows_mode():
     assert load_settings({"HALCYON_MODE": "vulnerable"}).sec_artifact_verification is False
     assert load_settings({"HALCYON_MODE": "secure"}).sec_artifact_verification is True
+
+
+def test_tool_scope_enforcement_follows_mode():
+    assert load_settings({"HALCYON_MODE": "vulnerable"}).sec_tool_scope_enforcement is False
+    assert load_settings({"HALCYON_MODE": "secure"}).sec_tool_scope_enforcement is True
