@@ -21,6 +21,8 @@ Participants **Build / Break / Secure** each layer. Named for the Eiger's north 
 
 ## Status
 
-Building **S1** (Foundation + M1 prompt injection) — the reliability spine every later module reuses. Design: [`docs/specs/2026-07-11-halcyon-s1-foundation-m1-design.md`](docs/specs/2026-07-11-halcyon-s1-foundation-m1-design.md).
+**M1 · M2 · M3 · M4 (all of Day 1) + M5 (first Day-2 module) built and merged** — 112 tests, each proven live end-to-end. Next: M6 (MCP security).
+
+👉 **[`docs/STATUS.md`](docs/STATUS.md) is the single source of truth for build status and how to resume.** It covers the architecture, the per-module summary, how to run/test/deploy, the M6 starting point, and deferred cleanups.
 
 Planning workspace / full course context lives in the `Blackhat` workspace (`halcyon-lab-spec.md`, `HANDOFF.md`, `CLAUDE.md`).
