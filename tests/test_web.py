@@ -152,6 +152,12 @@ def test_m4_submit_wrong_is_not_credited():
     assert client.get("/validate/m4", params={"session": "p2"}).json()["core"] == "fail"
 
 
+def test_chat_page_has_m4_panel():
+    client, _ = make_client({"HALCYON_MODE": "vulnerable"}, "hi")
+    body = client.get("/chat", params={"session": "p1"}).text
+    assert 'id="m4hashbtn"' in body and 'id="m4pkgbtn"' in body
+
+
 def test_rag_poison_then_ask_core_pass():
     client, store, kb = make_client_kb(
         {"HALCYON_MODE": "vulnerable"}, f"ok {guards.RAG_MARKER}"

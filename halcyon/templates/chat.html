@@ -20,6 +20,10 @@
           border-radius: 6px; }
   #ragout { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; margin-top: .6rem;
             background: #fafafa; min-height: 1.4em; }
+  #m4 { margin-top: 1.5rem; }
+  #m4hash, #m4pkg { padding: .6rem .7rem; font-size: 1rem; border: 1px solid #bbb;
+                     border-radius: 6px; }
+  #m4status { display: block; margin-top: .6rem; }
 </style>
 <h1>Halo</h1>
 <div id="cfg" data-encoding="{{ output_encoding }}"></div>
@@ -59,6 +63,22 @@
     <button id="askbtn" type="button">Ask Halo (RAG)</button>
   </div>
   <div id="ragout"></div>
+</div>
+
+<div id="m4">
+  <h2>M4 — Supply-chain audit</h2>
+  <p>Audit <code>labs/m4/</code>. Run <code>python -m halcyon.scan_artifact labs/m4/artifacts/*</code>
+     to find the poisoned model; check <code>labs/m4/requirements-vulnerable.txt</code> for a
+     vulnerable pin. Submit your findings below.</p>
+  <div class="controls">
+    <input id="m4hash" type="text" placeholder="Artifact sha256" />
+    <button id="m4hashbtn" type="button">Submit artifact</button>
+  </div>
+  <div class="controls">
+    <input id="m4pkg" type="text" placeholder="Vulnerable package" />
+    <button id="m4pkgbtn" type="button">Submit package</button>
+  </div>
+  <span id="m4status"></span>
 </div>
 
 <script nonce="{{ nonce }}">
@@ -159,6 +179,40 @@
       ragout.textContent = "request failed — " + err;
     } finally {
       askbtn.disabled = false;
+    }
+  };
+
+  const m4status = document.getElementById("m4status");
+  async function submitM4(findingType, value) {
+    const r = await fetch("/submit/m4", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: sid, finding_type: findingType, value: value }),
+    });
+    const data = await r.json();
+    return data.correct;
+  }
+  document.getElementById("m4hashbtn").onclick = async () => {
+    const btn = document.getElementById("m4hashbtn");
+    btn.disabled = true;
+    try {
+      const correct = await submitM4("malicious_artifact", document.getElementById("m4hash").value);
+      m4status.textContent = "artifact: " + (correct ? "correct" : "incorrect");
+    } catch (err) {
+      m4status.textContent = "artifact: request failed — " + err;
+    } finally {
+      btn.disabled = false;
+    }
+  };
+  document.getElementById("m4pkgbtn").onclick = async () => {
+    const btn = document.getElementById("m4pkgbtn");
+    btn.disabled = true;
+    try {
+      const correct = await submitM4("vulnerable_dependency", document.getElementById("m4pkg").value);
+      m4status.textContent = "package: " + (correct ? "correct" : "incorrect");
+    } catch (err) {
+      m4status.textContent = "package: request failed — " + err;
+    } finally {
+      btn.disabled = false;
     }
   };
 </script>
