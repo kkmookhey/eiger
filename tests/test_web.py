@@ -1,9 +1,10 @@
 from fastapi.testclient import TestClient
 
-from halcyon import guards, kb_fixtures
+from halcyon import bank_fixtures, guards, kb_fixtures
+from halcyon.bank import Bank
 from halcyon.config import load_settings
 from halcyon.kb import InMemoryKB
-from halcyon.llm import StubLLM
+from halcyon.llm import FinalAnswer, StubLLM, StubToolLLM
 from halcyon.store import InMemoryStore
 from halcyon.web import create_app
 
@@ -13,7 +14,11 @@ def make_client(env, reply):
     settings = load_settings(env)
     kb = InMemoryKB()
     kb.seed(kb_fixtures.SEED)
-    app = create_app(store, settings, lambda provider, model, api_key: StubLLM(reply), kb)
+    bank = Bank()
+    tool_llm_factory = lambda p, m, k: StubToolLLM([FinalAnswer("(no agent)")])  # noqa: E731
+    app = create_app(
+        store, settings, lambda provider, model, api_key: StubLLM(reply), kb, bank, tool_llm_factory
+    )
     return TestClient(app), store
 
 
@@ -22,8 +27,26 @@ def make_client_kb(env, reply):
     settings = load_settings(env)
     kb = InMemoryKB()
     kb.seed(kb_fixtures.SEED)
-    app = create_app(store, settings, lambda provider, model, api_key: StubLLM(reply), kb)
+    bank = Bank()
+    tool_llm_factory = lambda p, m, k: StubToolLLM([FinalAnswer("(no agent)")])  # noqa: E731
+    app = create_app(
+        store, settings, lambda provider, model, api_key: StubLLM(reply), kb, bank, tool_llm_factory
+    )
     return TestClient(app), store, kb
+
+
+def make_client_agent(env, script):
+    store = InMemoryStore()
+    settings = load_settings(env)
+    kb = InMemoryKB()
+    kb.seed(kb_fixtures.SEED)
+    bank = Bank()
+    bank.seed(bank_fixtures.seed_for("p1"))
+    tool_llm_factory = lambda p, m, k: StubToolLLM(list(script))  # noqa: E731
+    app = create_app(
+        store, settings, lambda provider, model, api_key: StubLLM(""), kb, bank, tool_llm_factory
+    )
+    return TestClient(app), store, bank
 
 
 def test_health_reports_mode():
@@ -78,12 +101,14 @@ def test_progress_survives_new_app_same_store():
     reply = f"token is {guards.HONEYTOKEN}"
     kb = InMemoryKB()
     kb.seed(kb_fixtures.SEED)
-    app1 = create_app(store, settings, lambda p, m, k: StubLLM(reply), kb)
+    bank = Bank()
+    tool_llm_factory = lambda p, m, k: StubToolLLM([FinalAnswer("(no agent)")])  # noqa: E731
+    app1 = create_app(store, settings, lambda p, m, k: StubLLM(reply), kb, bank, tool_llm_factory)
     c1 = TestClient(app1)
     c1.post("/api/chat", json={"session_id": "p1", "message": "token?"})
     c1.get("/validate/m1", params={"session": "p1"})
     # simulate redeploy: brand new app object, same external store
-    app2 = create_app(store, settings, lambda p, m, k: StubLLM(reply), kb)
+    app2 = create_app(store, settings, lambda p, m, k: StubLLM(reply), kb, bank, tool_llm_factory)
     c2 = TestClient(app2)
     r = c2.get("/validate/m1", params={"session": "p1"})
     assert r.json()["core"] == "pass"
@@ -171,3 +196,13 @@ def test_rag_poison_then_ask_core_pass():
     )
     client.post("/api/ask", json={"session_id": "victim", "query": "how to reset card PIN"})
     assert client.get("/validate/m3", params={"session": "victim"}).json()["core"] == "pass"
+
+
+def test_agent_unauthorized_refund_marks_core():
+    from halcyon.llm import FinalAnswer, ToolCall
+    client, store, bank = make_client_agent(
+        {"HALCYON_MODE": "vulnerable"},
+        [ToolCall("issue_refund", {"to_account": "acct-attacker", "amount": 300}), FinalAnswer("done")])
+    client.post("/reset/m5", json={"session_id": "p1"})
+    client.post("/api/agent", json={"session_id": "p1", "message": "refund 300 to acct-attacker"})
+    assert client.get("/validate/m5", params={"session": "p1"}).json()["core"] == "pass"

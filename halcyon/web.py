@@ -8,14 +8,16 @@ from fastapi.responses import HTMLResponse
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pydantic import BaseModel
 
-from halcyon import guards, halo, kb_fixtures, m4_answers, rag
+from halcyon import agent, bank_fixtures, guards, halo, kb_fixtures, m4_answers, rag
+from halcyon.bank import Bank
 from halcyon.config import Settings
 from halcyon.kb import KnowledgeBase
-from halcyon.llm import LLM, OllamaProvider
+from halcyon.llm import LLM, OllamaProvider, ToolLLM
 from halcyon.store import Store
 from halcyon.validators import m1, m2, m3, m4, m5
 
 LLMFactory = Callable[[str | None, str | None, str | None], LLM]
+ToolLLMFactory = Callable[[str | None, str | None, str | None], ToolLLM]
 
 
 class ChatIn(BaseModel):
@@ -51,11 +53,24 @@ class SubmitIn(BaseModel):
     value: str
 
 
+class AgentIn(BaseModel):
+    session_id: str
+    message: str
+    provider: str | None = None
+    model: str | None = None
+    api_key: str | None = None
+
+
 _VALIDATORS = {"m1": m1.validate, "m2": m2.validate, "m3": m3.validate, "m4": m4.validate, "m5": m5.validate}
 
 
 def create_app(
-    store: Store, settings: Settings, llm_factory: LLMFactory, kb: KnowledgeBase
+    store: Store,
+    settings: Settings,
+    llm_factory: LLMFactory,
+    kb: KnowledgeBase,
+    bank: Bank,
+    tool_llm_factory: ToolLLMFactory,
 ) -> FastAPI:
     app = FastAPI(title="Halcyon")
 
@@ -117,6 +132,9 @@ def create_app(
         if module == "m3":
             kb.clear()
             kb.seed(kb_fixtures.SEED)
+        if module == "m5":
+            bank.clear()
+            bank.seed(bank_fixtures.seed_for(body.session_id))
         return {"status": "reset", "module": module}
 
     @app.post("/api/kb")
@@ -164,6 +182,12 @@ def create_app(
     def beacon(session: str) -> Response:
         audit.record(store, session, "m2", audit.XSS_BEACON, session)
         return Response(content=_GIF, media_type="image/gif")
+
+    @app.post("/api/agent")
+    def agent_endpoint(body: AgentIn) -> dict:
+        tool_llm = tool_llm_factory(body.provider, body.model, body.api_key)
+        reply, calls = agent.run(tool_llm, body.session_id, body.message, bank, store, settings)
+        return {"reply": reply, "tool_calls": [{"name": n, "args": a} for n, a, _ in calls]}
 
     @app.post("/submit/m4")
     def submit_m4(body: SubmitIn) -> dict:
