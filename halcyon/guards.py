@@ -1,3 +1,4 @@
+import hashlib
 import html
 import re
 
@@ -116,3 +117,22 @@ def authorize_tool_call(
     if tool_name == "update_email":
         return bank.owns(session_id, str(args.get("account", "")))
     return True
+
+
+_MCP_INJECTION_PATTERNS = [r"important:", r"\byou must\b", r"also call",
+                           r"ignore (all )?(previous|prior)", r"system\s*:", r"reveal"]
+
+
+def looks_poisoned(desc: str) -> bool:
+    d = desc.lower()
+    return any(re.search(p, d) for p in _MCP_INJECTION_PATTERNS)
+
+
+def quarantine_description(desc: str) -> str:
+    # Keep only sentences that carry no injection markers; treat the rest as untrusted data.
+    kept = [s for s in re.split(r"(?<=[.!?])\s+", desc) if not looks_poisoned(s)]
+    return " ".join(kept).strip()
+
+
+def desc_hash(desc: str) -> str:
+    return hashlib.sha256(desc.encode()).hexdigest()
