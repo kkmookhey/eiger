@@ -23,3 +23,25 @@ def run(llm: ToolLLM, session_id: str, message: str, bank: Bank,
             {"id": call_id, "name": step.name, "args": step.args}]})
         messages.append({"role": "tool", "tool_call_id": call_id, "name": step.name, "content": result})
     return "step limit reached", calls
+
+
+async def run_mcp(llm, session_id: str, message: str, host, store, settings,  # type: ignore[no-untyped-def]
+                   module: str = "m6") -> tuple[str, list]:
+    from halcyon.llm import FinalAnswer, ToolCall
+
+    host.approve(await host.list_tools())
+    messages: list[dict] = [{"role": "user", "content": message}]
+    calls: list = []
+    for i in range(MAX_STEPS):
+        schemas = await host.schemas_for_llm()
+        step = llm.next_step(messages, schemas)
+        if isinstance(step, FinalAnswer):
+            return step.text, calls
+        assert isinstance(step, ToolCall)
+        result = await host.call(step.name, step.args)
+        calls.append((step.name, step.args, result))
+        cid = f"call_{i}"
+        messages.append({"role": "assistant", "tool_calls": [
+            {"id": cid, "name": step.name, "args": step.args}]})
+        messages.append({"role": "tool", "tool_call_id": cid, "name": step.name, "content": result})
+    return "step limit reached", calls
