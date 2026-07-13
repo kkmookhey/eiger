@@ -13,6 +13,9 @@ VULNERABLE_DEPENDENCY_IDENTIFIED = "vulnerable_dependency_identified"
 TOOL_CALL = "tool_call"
 UNAUTHORIZED_TOOL_CALL = "unauthorized_tool_call"
 UNAUTHORIZED_ACCOUNT_MODIFICATION = "unauthorized_account_modification"
+MCP_POISONED_INVOCATION = "mcp_poisoned_invocation"
+MCP_DESC_MUTATION_ACCEPTED = "mcp_desc_mutation_accepted"
+TOKEN_READ = "token_read"
 
 
 def record(

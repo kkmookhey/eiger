@@ -52,3 +52,19 @@ def test_artifact_verification_follows_mode():
 def test_tool_scope_enforcement_follows_mode():
     assert load_settings({"HALCYON_MODE": "vulnerable"}).sec_tool_scope_enforcement is False
     assert load_settings({"HALCYON_MODE": "secure"}).sec_tool_scope_enforcement is True
+
+
+def test_mcp_flags_default_secure_in_secure_mode():
+    from halcyon.config import load_settings
+    s = load_settings({"HALCYON_MODE": "secure"})
+    assert s.sec_mcp_desc_pinning is True
+    assert s.sec_mcp_token_scoping is True
+
+
+def test_mcp_flags_default_off_in_vulnerable_mode_and_override():
+    from halcyon.config import load_settings
+    s = load_settings({"HALCYON_MODE": "vulnerable"})
+    assert s.sec_mcp_desc_pinning is False
+    assert s.sec_mcp_token_scoping is False
+    s2 = load_settings({"HALCYON_MODE": "vulnerable", "SEC_MCP_DESC_PINNING": "on"})
+    assert s2.sec_mcp_desc_pinning is True
