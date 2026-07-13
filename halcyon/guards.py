@@ -100,6 +100,12 @@ def assemble_rag(settings: Settings, query: str, chunks: list[Chunk]) -> tuple[l
 _MONEY_TOOLS = {"transfer_funds", "issue_refund"}
 
 
+def authorize_token_access(requesting_server: str, target_service: str, settings: Settings) -> bool:
+    if not settings.sec_mcp_token_scoping:
+        return True
+    return requesting_server == target_service
+
+
 def authorize_tool_call(
     session_id: str, tool_name: str, args: dict, bank: Bank, settings: Settings
 ) -> bool:

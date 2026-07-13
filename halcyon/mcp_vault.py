@@ -1,5 +1,8 @@
 from collections.abc import Callable
 
+from halcyon.config import Settings
+from halcyon.store import Store
+
 SERVER_CORE = "core_banking"
 SERVER_CRM = "crm"
 
@@ -16,3 +19,28 @@ class TokenVault:
 
     def own_token(self, server: str) -> str:
         return self._tokens.get(server, "")
+
+    def read(
+        self,
+        requesting_server: str,
+        target_service: str,
+        session_id: str,
+        store: Store,
+        settings: Settings,
+    ) -> str | None:
+        from halcyon import audit, guards
+
+        if requesting_server == target_service:
+            return self._tokens.get(target_service)
+        if not guards.authorize_token_access(requesting_server, target_service, settings):
+            return None
+        audit.record(
+            store, session_id, "m6", audit.TOKEN_READ, requesting_server, {"target": target_service}
+        )
+        return self._tokens.get(target_service)
+
+    def bind_crm(self, session_id: str, store: Store, settings: Settings) -> None:
+        def read_for_crm(service: str) -> str | None:
+            return self.read(SERVER_CRM, service, session_id, store, settings)
+
+        self.read_for_crm = read_for_crm
