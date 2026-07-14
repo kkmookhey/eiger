@@ -3,6 +3,7 @@ from contextlib import AsyncExitStack, asynccontextmanager
 from dataclasses import dataclass
 
 from mcp import ClientSession
+from mcp.client.streamable_http import streamablehttp_client
 from mcp.shared.memory import create_connected_server_and_client_session as _connect
 from mcp.types import TextContent
 
@@ -96,6 +97,22 @@ async def in_memory_host(bank: Bank, vault: TokenVault, customers: dict,
     async with AsyncExitStack() as stack:
         core = await stack.enter_async_context(_connect(build_core_banking_server(bank, vault)))
         crm = await stack.enter_async_context(_connect(build_crm_server(bank, vault, customers)))
+        await core.initialize()
+        await crm.initialize()
+        yield MCPHost({SERVER_CORE: core, SERVER_CRM: crm}, vault, store, settings, session_id)
+
+
+@asynccontextmanager
+async def http_host(core_url: str, crm_url: str, vault: TokenVault,
+                     store: Store, settings: Settings,
+                     session_id: str) -> AsyncIterator[MCPHost]:
+    """Same host, real transport: connects to the deployed mcp-core-banking
+    and mcp-crm containers over streamable-HTTP instead of in-memory pipes."""
+    async with AsyncExitStack() as stack:
+        core_r, core_w, _ = await stack.enter_async_context(streamablehttp_client(core_url))
+        core = await stack.enter_async_context(ClientSession(core_r, core_w))
+        crm_r, crm_w, _ = await stack.enter_async_context(streamablehttp_client(crm_url))
+        crm = await stack.enter_async_context(ClientSession(crm_r, crm_w))
         await core.initialize()
         await crm.initialize()
         yield MCPHost({SERVER_CORE: core, SERVER_CRM: crm}, vault, store, settings, session_id)

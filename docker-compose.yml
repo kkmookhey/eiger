@@ -8,11 +8,27 @@ services:
       OLLAMA_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
       DEFAULT_PROVIDER: local
+      MCP_CORE_URL: http://mcp-core-banking:9001/mcp
+      MCP_CRM_URL: http://mcp-crm:9002/mcp
     depends_on:
       db:
         condition: service_healthy
       ollama:
         condition: service_started
+      mcp-core-banking:
+        condition: service_started
+      mcp-crm:
+        condition: service_started
+  mcp-core-banking:
+    build: .
+    command: uv run uvicorn halcyon.mcp_deploy:CORE_ASGI --host 0.0.0.0 --port 9001
+    environment:
+      HALCYON_MODE: ${HALCYON_MODE:-vulnerable}
+  mcp-crm:
+    build: .
+    command: uv run uvicorn halcyon.mcp_deploy:CRM_ASGI --host 0.0.0.0 --port 9002
+    environment:
+      HALCYON_MODE: ${HALCYON_MODE:-vulnerable}
   db:
     image: postgres:16
     environment:
