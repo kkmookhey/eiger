@@ -22,6 +22,7 @@ class Settings:
     sec_tool_scope_enforcement: bool
     sec_mcp_desc_pinning: bool
     sec_mcp_token_scoping: bool
+    sec_inter_agent_auth: bool
     ollama_url: str
     ollama_model: str
     database_url: str
@@ -45,6 +46,7 @@ def load_settings(env: Mapping[str, str]) -> Settings:
         sec_tool_scope_enforcement=_flag(env, "SEC_TOOL_SCOPE_ENFORCEMENT", secure),
         sec_mcp_desc_pinning=_flag(env, "SEC_MCP_DESC_PINNING", secure),
         sec_mcp_token_scoping=_flag(env, "SEC_MCP_TOKEN_SCOPING", secure),
+        sec_inter_agent_auth=_flag(env, "SEC_INTER_AGENT_AUTH", secure),
         ollama_url=env.get("OLLAMA_URL", "http://localhost:11434"),
         ollama_model=env.get("OLLAMA_MODEL", "llama3.1:8b"),
         database_url=env.get("DATABASE_URL", ""),

@@ -16,6 +16,9 @@ UNAUTHORIZED_ACCOUNT_MODIFICATION = "unauthorized_account_modification"
 MCP_POISONED_INVOCATION = "mcp_poisoned_invocation"
 MCP_DESC_MUTATION_ACCEPTED = "mcp_desc_mutation_accepted"
 TOKEN_READ = "token_read"
+INTER_AGENT_INJECTION_PROPAGATED = "inter_agent_injection_propagated"
+UNAUTHORIZED_APPROVAL = "unauthorized_approval"
+SUPERVISOR_PROVENANCE_BYPASSED = "supervisor_provenance_bypassed"
 
 
 def record(

@@ -68,3 +68,12 @@ def test_mcp_flags_default_off_in_vulnerable_mode_and_override():
     assert s.sec_mcp_token_scoping is False
     s2 = load_settings({"HALCYON_MODE": "vulnerable", "SEC_MCP_DESC_PINNING": "on"})
     assert s2.sec_mcp_desc_pinning is True
+
+
+def test_inter_agent_auth_flag_defaults_to_mode():
+    from halcyon.config import load_settings
+    assert load_settings({"HALCYON_MODE": "secure"}).sec_inter_agent_auth is True
+    assert load_settings({"HALCYON_MODE": "vulnerable"}).sec_inter_agent_auth is False
+    assert load_settings(
+        {"HALCYON_MODE": "vulnerable", "SEC_INTER_AGENT_AUTH": "on"}
+    ).sec_inter_agent_auth is True
