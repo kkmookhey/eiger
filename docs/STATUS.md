@@ -10,9 +10,9 @@ Companion docs: `README.md` (what Eiger is), `OPERATIONS.md` (deploy/run), `CLAU
 
 - **What:** a deliberately-vulnerable single-app teaching lab for a 2-day Black Hat course on adversarial AI. Fictional AI-neobank **Halcyon**; assistant **Halo**. Attacked across six layers (L0→L5) that grow module by module. Participants **Build / Break / Secure** each layer.
 - **Repo:** `eiger`. Local: `/Users/kkmookhey/Projects/eiger`. Public remotes: `origin` = github.com/kkmookhey/eiger, `transilience` = github.com/transilienceai/eiger. Branch: `main`.
-- **Built so far:** **M1 · M2 · M3 · M4** (all of Day 1) **+ M5 · M6 · M7** (Day-2 modules). M1–M6 merged to `main`; M7 built on `s7-m7-multi-agent` (not yet merged — merge follows the e2e proof), each with a live end-to-end proof.
-- **Tests:** `154 passed, 4 skipped` (the 4 skips are the Postgres + ChromaDB + 2 MCP-over-HTTP integration tests, gated by `TEST_DATABASE_URL` / `RUN_CHROMA_TESTS` / `RUN_MCP_HTTP_TESTS`). Ruff + mypy clean.
-- **Next:** merge M7, then **M8 (guardrails + capstone)**, plus the **Ops fleet slice**. Then the module **decks** (deferred until the app was real).
+- **Built so far:** **M1 · M2 · M3 · M4** (all of Day 1) **+ M5 · M6 · M7** (Day-2 modules). **All merged to `main`** (M7 merged 2026-07-18, HEAD `2d5c5de`), each with a live end-to-end proof.
+- **Tests:** `158 passed, 4 skipped` (the 4 skips are the Postgres + ChromaDB + 2 MCP-over-HTTP integration tests, gated by `TEST_DATABASE_URL` / `RUN_CHROMA_TESTS` / `RUN_MCP_HTTP_TESTS`). Ruff + mypy clean.
+- **Next:** **M8 (guardrails + capstone)**, plus the **Ops fleet slice**. Then the module **decks** (deferred until the app was real).
 
 ---
 
@@ -84,7 +84,7 @@ M0 = Gandalf (hosted third-party warm-up) — nothing to build.
 
 ```bash
 cd /Users/kkmookhey/Projects/eiger
-uv run pytest -q                      # 154 passed, 4 skipped
+uv run pytest -q                      # 158 passed, 4 skipped
 uv run ruff check . && uv run mypy halcyon
 # Local full stack (now 5 services: web, db, ollama, mcp-core-banking, mcp-crm):
 docker compose up -d --build
@@ -123,9 +123,9 @@ Introduced a real **LangGraph** fraud/dispute pipeline (`intake → risk → act
 
 L5 production — the final layer, input/output guardrails + prompt firewall (`SEC_GUARDRAILS`) plus a capstone that threads the earlier modules together. Source of truth = `halcyon-lab-spec.md` (Blackhat workspace) + `HANDOFF.md`.
 
-**Before M8 starts:** merge M7 (live e2e proof, ff-merge, push both remotes, delete branch — `superpowers:finishing-a-development-branch`), update memory (`MEMORY.md`, `blackhat-build-sequence.md`).
+**M7 merge: DONE** (2026-07-18 — ff-merged `2d5c5de` to `main`, pushed both remotes, branch deleted, memory updated).
 
-**To resume:** re-read this file + the M8 spec section, then run the loop: brainstorm → spec → plan → subagent-driven build → opus review → e2e → merge.
+**To resume M8:** re-read this file + the M8 spec section (`halcyon-lab-spec.md` §5 M8), then run the loop: brainstorm → spec → plan → subagent-driven build → opus review → e2e → merge.
 
 **Remaining after M8:** the **Ops slice** (22-container-per-participant fleet + the 5 rehearsed `OPERATIONS.md` commands + **per-participant MCP-server isolation** + restricted DB role before the M4/M6 RCE labs + bake the embedding model into the image for offline local-LAN + trim the `uv run` re-sync at web container start), then the **module decks M2–M8**.
 
