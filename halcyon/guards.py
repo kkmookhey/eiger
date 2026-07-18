@@ -149,6 +149,10 @@ def verify_message(content: dict, sig: str, key: str) -> bool:
     return hmac.compare_digest(sign_message(content, key), sig)
 
 
+def verify_chain(messages: list[dict], key: str) -> bool:
+    return all(verify_message(m["content"], m["sig"], key) for m in messages)
+
+
 def assemble_agent_prompt(
     settings: Settings, instruction: str, dispute_text: str, upstream: str
 ) -> tuple[list[dict], bool]:

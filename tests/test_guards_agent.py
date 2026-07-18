@@ -50,6 +50,34 @@ def test_assemble_secure_quarantines_dispute_text():
     assert DISPUTE_TEXT in user["content"]
 
 
+def test_verify_chain_accepts_all_correctly_signed_messages():
+    key = "k1"
+    messages = [
+        {"content": {"decision": "approved"}, "sig": guards.sign_message({"decision": "approved"}, key)},
+        {"content": {"decision": "stamped"}, "sig": guards.sign_message({"decision": "stamped"}, key)},
+    ]
+    assert guards.verify_chain(messages, key) is True
+
+
+def test_verify_chain_rejects_unsigned_message():
+    key = "k1"
+    messages = [
+        {"content": {"decision": "approved"}, "sig": guards.sign_message({"decision": "approved"}, key)},
+        {"content": {"decision": "stamped"}, "sig": ""},
+    ]
+    assert guards.verify_chain(messages, key) is False
+
+
+def test_verify_chain_rejects_tampered_message():
+    key = "k1"
+    messages = [
+        {"content": {"decision": "approved"}, "sig": guards.sign_message({"decision": "approved"}, key)},
+        {"content": {"decision": "stamped"}, "sig": guards.sign_message({"decision": "stamped"}, key)},
+    ]
+    messages[1]["content"] = {"decision": "tampered"}
+    assert guards.verify_chain(messages, key) is False
+
+
 def test_authorize_approval_vuln_allows_any_target():
     bank = Bank()
     bank.seed([{"id": "acct-attacker", "owner_session": "attacker", "balance": 0, "email": "x@e.test"}])

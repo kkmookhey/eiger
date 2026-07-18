@@ -29,7 +29,7 @@ def test_vulnerable_run_records_core_and_stretch():
     assert audit.has_event(store, "s", "m7", audit.UNAUTHORIZED_APPROVAL)
     assert audit.has_event(store, "s", "m7", audit.SUPERVISOR_PROVENANCE_BYPASSED)
     assert bank.get("acct-attacker").balance == 5000  # money actually moved
-    assert len(transcript) == 4  # intake, risk, action, (supervisor emits decision, not a msg)
+    assert len(transcript) == 4  # intake, risk, action, supervisor (each emits one signed message)
 
 
 def test_secure_run_blocks_everything():
@@ -58,3 +58,23 @@ def test_secure_legit_refund_to_owned_account_still_works():
     assert not audit.has_event(store, "s", "m7", audit.UNAUTHORIZED_APPROVAL)
     assert bank.get("acct-me").balance == 1100  # legit refund applied
     assert decision == "stamped"
+
+
+def test_secure_transcript_is_fully_signed_vulnerable_transcript_is_not():
+    store = InMemoryStore()
+    secure_settings = load_settings({"HALCYON_MODE": "secure"})
+    bank = _bank("s")
+    llm = StubToolLLM([
+        FinalAnswer("Risk: low."),
+        ToolCall("issue_refund", {"to_account": "acct-me", "amount": 100}),
+    ])
+    dispute = {"account": "acct-me", "amount": 100, "dispute_text": "Please refund my duplicate charge."}
+    decision, secure_transcript = dispute_pipeline.run_dispute(llm, "s", dispute, bank, store, secure_settings)
+    assert decision == "stamped"
+    assert all(m["sig"] for m in secure_transcript)  # every inter-agent message is signed
+
+    store = InMemoryStore()
+    vuln_settings = load_settings({"HALCYON_MODE": "vulnerable"})
+    bank = _bank("s")
+    _, vuln_transcript = dispute_pipeline.run_dispute(_script(), "s", dispute_fixtures.scenario_for("s"), bank, store, vuln_settings)
+    assert all(m["sig"] == "" for m in vuln_transcript)  # vuln mode never signs

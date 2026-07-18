@@ -102,9 +102,9 @@ def build_dispute_graph(
     def supervisor(state: DisputeState) -> dict:
         approved_unauthorized = state.get("approved_unauthorized", False)
         action_decision = state.get("action_decision", "")
-        action_msg = state["messages"][-1]
         if settings.sec_inter_agent_auth:
-            verified = guards.verify_message(action_msg["content"], action_msg["sig"], key)
+            # secure supervisor authenticates the signed provenance chain (unsigned/forged messages fail)
+            verified = guards.verify_chain(state["messages"], key)
             decision = (
                 "stamped"
                 if (verified and action_decision == "approved" and not approved_unauthorized)
