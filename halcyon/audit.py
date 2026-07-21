@@ -21,6 +21,7 @@ UNAUTHORIZED_APPROVAL = "unauthorized_approval"
 SUPERVISOR_PROVENANCE_BYPASSED = "supervisor_provenance_bypassed"
 GUARDRAIL_BYPASSED = "guardrail_bypassed"
 GUARDRAIL_HARDENED_BLOCK = "guardrail_hardened_block"
+GUARDRAIL_DECISION = "guardrail_decision"
 
 
 def record(

@@ -29,3 +29,28 @@ def test_benign_passes_no_guardrail_event():
     reply = halo.guarded_turn(store, StubLLM("your balance is 1000"), settings, "s", "what is my balance")
     assert reply == "your balance is 1000"
     assert not audit.has_event(store, "s", "m8", audit.GUARDRAIL_BYPASSED)
+
+
+def test_secure_benign_turn_records_guardrail_decision():
+    store = InMemoryStore()
+    settings = load_settings({"HALCYON_MODE": "secure"})
+    reply = halo.guarded_turn(store, StubLLM("your balance is 1000"), settings, "s", "what is my balance")
+    assert reply == "your balance is 1000"
+    assert audit.has_event(store, "s", "m8", audit.GUARDRAIL_DECISION)
+    assert not audit.has_event(store, "s", "m8", audit.GUARDRAIL_BYPASSED)
+    assert not audit.has_event(store, "s", "m8", audit.GUARDRAIL_HARDENED_BLOCK)
+
+
+def test_vulnerable_benign_turn_records_no_guardrail_decision():
+    store = InMemoryStore()
+    settings = load_settings({"HALCYON_MODE": "vulnerable"})
+    halo.guarded_turn(store, StubLLM("your balance is 1000"), settings, "s", "what is my balance")
+    assert not audit.has_event(store, "s", "m8", audit.GUARDRAIL_DECISION)
+
+
+def test_secure_hardened_block_records_both_events():
+    store = InMemoryStore()
+    settings = load_settings({"HALCYON_MODE": "secure"})
+    halo.guarded_turn(store, StubLLM("SHOULD NOT BE REACHED"), settings, "s", OBFUSCATED)
+    assert audit.has_event(store, "s", "m8", audit.GUARDRAIL_HARDENED_BLOCK)
+    assert audit.has_event(store, "s", "m8", audit.GUARDRAIL_DECISION)

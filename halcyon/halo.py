@@ -36,6 +36,9 @@ def guarded_turn(
     message: str,
 ) -> str:
     decision = guards.guardrail_check(message, settings)
+    if settings.sec_guardrails:
+        audit.record(store, session_id, "m8", audit.GUARDRAIL_DECISION, session_id,
+                     {"allow": decision.allow, "event": decision.event, "message": message})
     if decision.event == "bypassed":
         audit.record(store, session_id, "m8", audit.GUARDRAIL_BYPASSED, session_id,
                      {"message": message})

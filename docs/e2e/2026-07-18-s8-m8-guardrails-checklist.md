@@ -53,6 +53,7 @@ Stack: `docker compose up -d --build web db ollama` against the shared Ollama ba
 
 ## Deferred / notes
 
+- **Instructor note — residual evasions:** the secure `canonicalize` guard covers leetspeak + NFKC (fullwidth) + zero-width stripping, but is an intentional ~15-line teaching guard and does NOT cover Cyrillic/Greek homoglyphs or punctuation-splitting (e.g. `o.p.e.r.a.t.o.r`); grading rides the deterministic raw-vs-canonical mechanism regardless, so a sharp participant evading secure mode is expected, not a bug.
 - garak/PyRIT are a documented **external** exercise (point your scanner at the live API) — not built into the suite; no live-run item here.
 - Guardrail grading is deterministic/model-independent by construction — canonicalize-then-match is pure string logic; the live e2e above is to confirm the wiring (endpoint → guard → audit → validator) works against a real model turn, not to prove the guard's correctness (already proven by the deterministic suite).
 

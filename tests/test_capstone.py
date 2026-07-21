@@ -42,3 +42,18 @@ def test_core_events_map_stays_in_sync_with_validators():
         for e in events:
             audit.record(store, "s", module, e, "s")
         assert validators[module].validate(store, "s")["core"] == "pass", module
+
+
+def test_every_core_event_is_necessary():
+    # For each module's CORE_EVENTS, dropping any single event must keep the
+    # validator core at "fail" — proves no listed event is a superset/redundant
+    # entry that would let the capstone under-report residual risk.
+    validators = {"m1": m1, "m2": m2, "m3": m3, "m4": m4,
+                  "m5": m5, "m6": m6, "m7": m7, "m8": m8}
+    for module, events in capstone.CORE_EVENTS.items():
+        for missing in events:
+            store = InMemoryStore()
+            for e in events:
+                if e != missing:
+                    audit.record(store, "s", module, e, "s")
+            assert validators[module].validate(store, "s")["core"] == "fail", (module, missing)
