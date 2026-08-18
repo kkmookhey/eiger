@@ -16,6 +16,14 @@ dependencies = [
     "litellm>=1.94.0",
 ]
 
+[project.optional-dependencies]
+# Deliberately vulnerable, and deliberately OPTIONAL. Ray 2.51.0 carries
+# CVE-2025-62593, which CISA added to its Known Exploited Vulnerabilities
+# catalogue on 2026-08-17. It is here so a scanner has an actively-exploited CVE
+# to find in this repository. `uv sync` does NOT install extras by default, so
+# running Halcyon does not pull Ray.
+vulnerable-demo = ["ray==2.51.0"]
+
 [dependency-groups]
 dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11"]
 
